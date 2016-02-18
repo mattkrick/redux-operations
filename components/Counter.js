@@ -11,7 +11,7 @@ const mapStateToProps = (state, props) => {
 
 
 @connect(mapStateToProps)
-class Counter extends Component {
+export default class Counter extends Component {
   render() {
     const { location, counter, dispatch } = this.props
     return (
@@ -29,14 +29,6 @@ class Counter extends Component {
   inc1 = () => {
     const {dispatch, location} = this.props;
     console.log(location);
-    dispatch(increment1(location))
+    dispatch(increment1(location, 'counter'))
   }
 }
-
-//<button onClick={decrement}>-</button>
-//{' '}
-//<button onClick={incrementIfOdd}>Increment if odd</button>
-//{' '}
-//<button onClick={() => incrementAsync()}>Increment async</button>
-
-export default Counter

@@ -1,18 +1,18 @@
 import {compose} from 'redux';
 
-const makeStoreActions = (storeActions, state, stack = []) => {
+const makeStoreActions = (storeActions, state, stack = [], key) => {
   //debugger
-  if (typeof  state === 'object' && state.signature === 'foo') {
+  if (typeof  state === 'object' && state.signature === '@@reduxOperations') {
     Object.keys(state).forEach(action => {
       if (action !== 'signature') {
         storeActions[action] = storeActions[action] || [];
-        storeActions[action].push({...state[action], defaultLocation: [...stack]})
+        storeActions[action].push({...state[action], defaultLocation: [...stack], name: key})
       }
     })
   } else {
     Object.keys(state).forEach(key => {
       stack.push(key);
-      makeStoreActions(storeActions, state[key], stack);
+      makeStoreActions(storeActions, state[key], stack, key);
     })
   }
   stack.pop();

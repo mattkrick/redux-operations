@@ -11,7 +11,7 @@ export const reduxQLMiddleware = ({ dispatch, getState, actions }) => {
 export const walkState = (locationStack, state) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
     if (!reduction[key]) {
-      reduction[key] = (currentIdx === locationStack.length -1) ? undefined : {}
+      reduction[key] = (currentIdx === locationStack.length - 1) ? undefined : {}
     }
     return reduction[key];
   }, state);
@@ -29,16 +29,25 @@ const appendChangeToState = (locationStack, state, newSubState) => {
 export const reduxQLReducer = (reducer)=> {
   return (state, action)=> {
     let newState = reducer(state, action);
-    const funcArray = action.meta && action.meta.actions && action.meta.actions[action.type];
-    if (funcArray) {
+    const operationArray = action.meta && action.meta.actions && action.meta.actions[action.type];
+    if (operationArray) {
       let hasChanged = false;
-      funcArray.forEach(fn => {
-        const locationStack = action.meta.location || fn.defaultLocation;
-        const subState = walkState(locationStack, state);
-        const newSubState = fn.reducer(subState, action);
+      debugger
+      let activeState = state;
+      operationArray.forEach(operation => {
+        let locationStack = operation.defaultLocation;
+        // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
+        // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
+        // Otherwise, use default
+        if (action.meta.location && (!action.meta.name || operation.name === action.meta.name)) {
+          locationStack = action.meta.location
+        }
+        const subState = walkState(locationStack, activeState);
+        const newSubState = operation.reducer(subState, action);
         if (subState !== newSubState) {
           hasChanged = true;
-          newState = appendChangeToState(locationStack, state, newSubState);
+          newState = appendChangeToState(locationStack, activeState, newSubState);
+          activeState = newState;
         }
       })
     }
