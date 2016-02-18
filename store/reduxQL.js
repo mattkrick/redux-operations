@@ -1,8 +1,8 @@
-export const reduxQLMiddleware = ({ dispatch, getState, actions }) => {
+export const reduxQLMiddleware = ({ dispatch, getState, operations }) => {
   return next => action => {
-    console.log(dispatch, getState, actions);
     action.meta = action.meta || {};
-    action.meta.actions = actions;
+    action.meta.operations = operations;
+    action.meta.dispatch = dispatch;
 
     next(action);
   }
@@ -29,10 +29,9 @@ const appendChangeToState = (locationStack, state, newSubState) => {
 export const reduxQLReducer = (reducer)=> {
   return (state, action)=> {
     let newState = reducer(state, action);
-    const operationArray = action.meta && action.meta.actions && action.meta.actions[action.type];
+    const operationArray = action.meta && action.meta.operations && action.meta.operations[action.type];
     if (operationArray) {
       let hasChanged = false;
-      debugger
       let activeState = state;
       operationArray.forEach(operation => {
         let locationStack = operation.defaultLocation;

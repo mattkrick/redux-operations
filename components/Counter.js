@@ -1,6 +1,6 @@
 import React, { Component, PropTypes } from 'react'
 import {walkState} from '../store/reduxQL';
-import {increment1} from '../actions/counter';
+import {increment1, incrementAsync} from '../actions/counter';
 import {connect} from 'react-redux';
 
 const mapStateToProps = (state, props) => {
@@ -19,7 +19,9 @@ export default class Counter extends Component {
         <p>
           Clicked: {counter} times
           {' '}
-          <button onClick={this.inc1}>+</button>
+          <button onClick={() => dispatch(increment1(location, 'counter'))}>+</button>
+          {' '}
+          <button onClick={() => dispatch(incrementAsync(location, 'counter'))}>Async +</button>
           {' '}
         </p>
       </div>

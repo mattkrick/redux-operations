@@ -1,18 +1,18 @@
 import {compose} from 'redux';
 
-const makeStoreActions = (storeActions, state, stack = [], key) => {
+const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   //debugger
   if (typeof  state === 'object' && state.signature === '@@reduxOperations') {
-    Object.keys(state).forEach(action => {
-      if (action !== 'signature') {
-        storeActions[action] = storeActions[action] || [];
-        storeActions[action].push({...state[action], defaultLocation: [...stack], name: key})
+    Object.keys(state).forEach(operation => {
+      if (operation !== 'signature') {
+        storeOperations[operation] = storeOperations[operation] || [];
+        storeOperations[operation].push({...state[operation], defaultLocation: [...stack], name: key})
       }
     })
   } else {
     Object.keys(state).forEach(key => {
       stack.push(key);
-      makeStoreActions(storeActions, state[key], stack, key);
+      makeStoreOperations(storeOperations, state[key], stack, key);
     })
   }
   stack.pop();
@@ -24,14 +24,15 @@ export default function applyMiddleware(...middlewares) {
     var dispatch = store.dispatch;
     var chain = [];
 
-    const actions = {};
+    const operations = {};
     const qlInit = {type: 'INITQL'};
     const initResult = reducer(undefined, qlInit);
-    makeStoreActions(actions, initResult);
+    makeStoreOperations(operations, initResult);
+    //Object.keys(operations).forEach()
     var middlewareAPI = {
       getState: store.getState,
-      dispatch: (action) => dispatch(action),
-      actions
+      dispatch: (operation) => dispatch(operation),
+      operations
     };
     chain = middlewares.map(middleware => middleware(middlewareAPI));
     dispatch = compose(...chain)(store.dispatch);
