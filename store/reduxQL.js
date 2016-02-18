@@ -49,6 +49,9 @@ export const reduxQLReducer = (reducer)=> {
           newState = appendChangeToState(locationStack, activeState, newSubState);
           activeState = newState;
         }
+        action.meta.operationResults = action.meta.operationResults || {};
+        action.meta.operationResults[operation.name] = {oldState:subState, state: newSubState}
+
       })
     }
     return newState;

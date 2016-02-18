@@ -1,9 +1,10 @@
 import { combineReducers } from 'redux'
-import {counter, clickCounter} from './counter'
+import {counter, clickCounter, multiplyAll} from './counter'
 
 const rootReducer = combineReducers({
   counter,
-  clickCounter
+  clickCounter,
+  multiplyAll
 });
 
 
