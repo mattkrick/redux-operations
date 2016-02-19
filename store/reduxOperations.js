@@ -1,6 +1,7 @@
 import {ActionTypes} from 'redux/lib/createStore';
 const {INIT} = ActionTypes;
-var INIT_ACTION = { type: '@@INIT' };
+const INIT_DEVTOOLS = '@@INIT';
+export const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 
 export const walkState = (locationStack, state) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
@@ -20,12 +21,34 @@ const appendChangeToState = (locationStack, state, newSubState) => {
   }
 };
 
+const makeStoreAPI = initResult => {
+  const api = {};
+  makeStoreOperations(api, initResult);
+  Object.keys(api).forEach(action => {
+    api[action].operationArray.sort((a, b) => {
+      const priorityA = a.priority || 0;
+      const priorityB = b.priority || 0;
+      return priorityA < priorityB;
+    });
+    if (process.env.NODE_ENV !== 'production') {
+      api[action].arguments = api[action].operationArray.reduce((reduction, operation) => {
+        return Object.assign(reduction, operation.arguments)
+      }, {})
+    }
+  });
+  return api;
+};
+
 const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   if (typeof  state === 'object' && state.signature === '@@reduxOperations') {
     Object.keys(state).filter(key => key !== 'signature').forEach(operation => {
       storeOperations[operation] = storeOperations[operation] || {};
       storeOperations[operation].operationArray = storeOperations[operation].operationArray || [];
-      storeOperations[operation].operationArray.push({...state[operation], defaultLocation: [...stack], name: key})
+      storeOperations[operation].operationArray.push({
+        ...state[operation],
+        defaultLocation: [...stack],
+        name: key
+      })
     })
   } else {
     Object.keys(state).forEach(key => {
@@ -36,27 +59,19 @@ const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   stack.pop();
 };
 
-function liftReducerWith(reducer, initialCommittedState, monitorReducer) {
+function liftReducerWith(reducer, initialCommittedState) {
   const initialLiftedState = {
-    api: {},
     userState: initialCommittedState
   };
 
-  /**
-   * Manages how the history actions modify the history state.
-   */
   return (liftedState = initialLiftedState, liftedAction) => {
-    let {api,userState} = liftedState;
+    let {api, userState} = liftedState;
     let activeState = reducer(userState, liftedAction);
-    if (liftedAction.type === INIT || liftedAction.type === INIT_ACTION.type) {
-      const qlInit = {type: 'INITQL'};
-      debugger
-      const initResult = reducer(undefined, qlInit);
-      api = {};
-      makeStoreOperations(api, initResult);
+    if (liftedAction.type === INIT || liftedAction.type === INIT_DEVTOOLS) {
+      const initResult = reducer(undefined, {type: INIT_REDUX_OPERATIONS});
+      api = makeStoreAPI(initResult);
     }
     else {
-      debugger
       const actionObject = api[liftedAction.type] || {};
       const operationArray = actionObject.operationArray;
       if (operationArray) {
@@ -69,7 +84,7 @@ function liftReducerWith(reducer, initialCommittedState, monitorReducer) {
             locationStack = liftedAction.meta.location
           }
           const subState = walkState(locationStack, activeState);
-          const newSubState = operation.reducer(subState, liftedAction);
+          const newSubState = operation.resolve(subState, liftedAction);
           if (subState !== newSubState) {
             activeState = appendChangeToState(locationStack, activeState, newSubState);
           }
@@ -93,8 +108,6 @@ function unliftStore(reduxOperationStore, liftReducer) {
   return {
     ...reduxOperationStore,
 
-    reduxOperationStore,
-
     dispatch(action) {
       action.meta = action.meta || {};
       action.meta.dispatch = reduxOperationStore.dispatch;
@@ -114,17 +127,8 @@ function unliftStore(reduxOperationStore, liftReducer) {
 
 export default function instrument() {
   return createStore => (reducer, initialState, enhancer) => {
-    debugger
     function liftReducer(r) {
       if (typeof r !== 'function') {
-        if (r && typeof r.default === 'function') {
-          throw new Error(
-            'Expected the reducer to be a function. ' +
-            'Instead got an object with a "default" field. ' +
-            'Did you pass a module instead of the default export? ' +
-            'Try passing require(...).default instead.'
-          );
-        }
         throw new Error('Expected the reducer to be a function.');
       }
       return liftReducerWith(r, initialState);
@@ -132,12 +136,8 @@ export default function instrument() {
 
     const reduxOperationStore = createStore(liftReducer(reducer), enhancer);
     if (reduxOperationStore.reduxOperationStore) {
-      throw new Error(
-        'DevTools instrumentation should not be applied more than once. ' +
-        'Check your store configuration.'
-      );
+      throw new Error('reduxOperation should not be applied more than once. Check your store configuration.');
     }
-
     return unliftStore(reduxOperationStore, liftReducer);
   };
 }

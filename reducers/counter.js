@@ -1,22 +1,23 @@
 import { INCREMENT_COUNTER1, DECREMENT_COUNTER1, INCREMENT_COUNTER2, DECREMENT_COUNTER2, increment1 } from '../actions/counter';
+import {INIT_REDUX_OPERATIONS} from '../store/reduxOperations';
 
 export const clickCounter = (state = 0, action) => {
-  if (action.type === 'INITQL') {
+  if (action.type === INIT_REDUX_OPERATIONS) {
     return {
       INCREMENT_COUNTER1: {
         priority: 10,
-        reducer: (state = 0, action)=> {
+        resolve: (state = 0, action)=> {
           console.log('click counter called - increment');
           return state+1;
         },
         description: 'inc counter on click counter',
-        args: {
+        arguments: {
           newCounterVal: {type: Number, description: 'the new counter val'}
         }
       },
       INCREMENT_ASYNC: {
         priority: 10,
-        reducer: (state = 0, action)=> {
+        resolve: (state = 0, action)=> {
           console.log('click counter called - inc async');
           return state+1;
         }
@@ -28,12 +29,16 @@ export const clickCounter = (state = 0, action) => {
 }
 
 export const multiplyAll = (state = 0, action) => {
-  if (action.type === 'INITQL') {
+  if (action.type === INIT_REDUX_OPERATIONS) {
     return {
       INCREMENT_COUNTER1: {
         priority: 100,
-        reducer: (state = 0, action)=> {
+        resolve: (state = 0, action)=> {
           return action.meta.operationResults.counter.state*action.meta.operationResults.clickCounter.state;
+        },
+        description: 'inc counter on click counter MULTIPLY ALL',
+        arguments: {
+          newCounterValMULTALL: {type: Number, description: 'the new counter val MULTIPLY ALL'}
         }
       },
       signature: '@@reduxOperations'
@@ -43,11 +48,11 @@ export const multiplyAll = (state = 0, action) => {
 }
 
 export const multiplyCounters = (state = {c1:undefined,c2:undefined,res:0}, action) => {
-  if (action.type === 'INITQL') {
+  if (action.type === INIT_REDUX_OPERATIONS) {
     return {
       INCREMENT_COUNTER1: {
         priority: 10,
-        reducer: (state = {c1:undefined,c2:undefined,res:0}, action)=> {
+        resolve: (state = {c1:undefined,c2:undefined,res:0}, action)=> {
           let {c1,c2} = state;
           if (action.meta.operationResults && action.meta.operationResults.counter && action.meta.operationResults.counter.oldState == c1)
             c1 = action.meta.operationResults.counter.state;
@@ -63,22 +68,22 @@ export const multiplyCounters = (state = {c1:undefined,c2:undefined,res:0}, acti
 }
 
 export const counter = (state = 0, action) => {
-  if (action.type === 'INITQL') {
+  if (action.type === INIT_REDUX_OPERATIONS) {
     return {
       INCREMENT_COUNTER1: {
         priority: 1,
-        reducer: (state = 0, action)=> {
+        resolve: (state = 0, action)=> {
           console.log('counter called - increment');
           return state + 1;
         }
       },
       DECREMENT_COUNTER1: {
         priority: 1,
-        reducer: (state = 0, action)=> state - 1
+        resolve: (state = 0, action)=> state - 1
       },
       INCREMENT_ASYNC: {
         priority: 1,
-        reducer: (state = 0, action)=> {
+        resolve: (state = 0, action)=> {
           console.log('counter async called');
           setTimeout(()=>{
             console.log('timeout returned called');
