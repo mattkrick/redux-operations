@@ -3,6 +3,7 @@ const INIT_DEVTOOLS = '@@INIT';
 export const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 export const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
+
 export const walkState = (locationStack, state) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
     if (!reduction[key]) {
@@ -28,7 +29,7 @@ const makeStoreAPI = initResult => {
     api[action].operationArray.sort((a, b) => {
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
-      return priorityA < priorityB;
+      return priorityA > priorityB;
     });
     if (process.env.NODE_ENV !== 'production') {
       api[action].arguments = api[action].operationArray.reduce((reduction, operation) => {
