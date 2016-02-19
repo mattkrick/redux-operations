@@ -1,0 +1,42 @@
+{
+  "name": "redux-operations",
+  "version": "0.1.0",
+  "description": "Prioritized waterfall reducers for predictable, dynamic, multi reducers with a visual API",
+  "main": "./lib/index.js",
+  "scripts": {
+    "clean": "rimraf lib",
+    "lint": "xo src/index.js --esnext --space --fix",
+    "build": "babel --presets es2015,stage-0 -d lib/ src/",
+    "prepublish": "npm run clean && npm run build",
+    "test": "ava __tests__/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattkrick/redux-operations.git"
+  },
+  "keywords": [
+    "redux",
+    "side effects",
+    "thunk",
+    "operations"
+  ],
+  "author": "Dror Tirosh",
+  "contributors": [
+    "Matt Krick <matt.krick@gmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mattkrick/redux-operations/issues"
+  },
+  "homepage": "https://github.com/mattkrick/redux-operations#readme",
+  "devDependencies": {
+    "babel-cli": "^6.5.1",
+    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-register": "^6.5.2",
+    "rimraf": "^2.5.2"
+  },
+  "peerDependencies": {
+    "redux": "^3.3.1"
+  }
+}
