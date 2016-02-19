@@ -3,8 +3,9 @@ const {INIT} = ActionTypes;
 
 export const walkState = (locationStack, state) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
-    if (!reduction[key]) debugger
-    reduction[key] = reduction[key] || (currentIdx === locationStack.length - 1) ? undefined : {};
+    if (!reduction[key]) {
+      reduction[key] = (currentIdx === locationStack.length - 1) ? undefined : {};
+    }
     return reduction[key];
   }, state);
 };
@@ -21,8 +22,9 @@ const appendChangeToState = (locationStack, state, newSubState) => {
 const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   if (typeof  state === 'object' && state.signature === '@@reduxOperations') {
     Object.keys(state).filter(key => key !== 'signature').forEach(operation => {
-      storeOperations[operation] = storeOperations[operation] || [];
-      storeOperations[operation].push({...state[operation], defaultLocation: [...stack], name: key})
+      storeOperations[operation] = storeOperations[operation] || {};
+      storeOperations[operation].operationArray = storeOperations[operation].operationArray || [];
+      storeOperations[operation].operationArray.push({...state[operation], defaultLocation: [...stack], name: key})
     })
   } else {
     Object.keys(state).forEach(key => {
@@ -51,25 +53,28 @@ function liftReducerWith(reducer, initialCommittedState, monitorReducer) {
       api = {};
       makeStoreOperations(api, initResult);
     }
-    const actionObject = api[liftedAction.type] || {};
-    const operationArray = actionObject.operationArray;
-    if (operationArray) {
-      operationArray.forEach(operation => {
-        let locationStack = operation.defaultLocation;
-        // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
-        // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
-        // Otherwise, use default
-        if (liftedAction.meta.location && (!liftedAction.meta.name || operation.name === liftedAction.meta.name)) {
-          locationStack = liftedAction.meta.location
-        }
-        const subState = walkState(locationStack, activeState);
-        const newSubState = operation.reducer(subState, liftedAction);
-        if (subState !== newSubState) {
-          activeState = appendChangeToState(locationStack, activeState, newSubState);
-        }
-        liftedAction.meta.operationResults = liftedAction.meta.operationResults || {};
-        liftedAction.meta.operationResults[operation.name] = {oldState: subState, state: newSubState};
-      })
+    else {
+      debugger
+      const actionObject = api[liftedAction.type] || {};
+      const operationArray = actionObject.operationArray;
+      if (operationArray) {
+        operationArray.forEach(operation => {
+          let locationStack = operation.defaultLocation;
+          // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
+          // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
+          // Otherwise, use default
+          if (liftedAction.meta.location && (!liftedAction.meta.name || operation.name === liftedAction.meta.name)) {
+            locationStack = liftedAction.meta.location
+          }
+          const subState = walkState(locationStack, activeState);
+          const newSubState = operation.reducer(subState, liftedAction);
+          if (subState !== newSubState) {
+            activeState = appendChangeToState(locationStack, activeState, newSubState);
+          }
+          liftedAction.meta.operationResults = liftedAction.meta.operationResults || {};
+          liftedAction.meta.operationResults[operation.name] = {oldState: subState, state: newSubState};
+        })
+      }
     }
     return {
       api,
@@ -83,20 +88,19 @@ function unliftState(liftedState) {
 }
 
 function unliftStore(liftedStore, liftReducer) {
-  let lastDefinedState;
-
   return {
     ...liftedStore,
 
     liftedStore,
 
-    //dispatch(action) {
-    //  liftedStore.dispatch(liftAction(action));
-    //  return action;
-    //},
+    dispatch(action) {
+      action.meta = action.meta || {};
+      action.meta.dispatch = liftedStore.dispatch;
+      liftedStore.dispatch(action);
+      return action;
+    },
 
     getState() {
-      debugger
       return unliftState(liftedStore.getState());
     },
 

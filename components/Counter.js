@@ -1,5 +1,5 @@
 import React, { Component, PropTypes } from 'react'
-import {walkState} from '../store/reduxQL';
+import {walkState} from '../store/reduxOperations';
 import {increment1, incrementAsync} from '../actions/counter';
 import {connect} from 'react-redux';
 
