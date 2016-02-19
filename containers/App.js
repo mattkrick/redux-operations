@@ -5,8 +5,8 @@ import ClickCounter from '../components/ClickCounter'
 //import MultiplyAll from '../components/MultiplyAll'
 import React, { Component, PropTypes } from 'react'
 
-const counter1Location = ['counters', 'counter1'];
-const counter2Location = ['counters', 'counter2'];
+const topCounter = ['counters', 'top'];
+const bottomCounter = ['counters', 'bottom'];
 
 export default class Counters extends Component {
   render() {
@@ -14,15 +14,24 @@ export default class Counters extends Component {
       <div>
         <div className="plain-counter">
           1. Plain counter
+          <Counter/>
         </div>
-        <Counter location={counter1Location}/>
-        <Counter location={counter2Location}/>
-        <Counter location={counter1Location}/>
+        <div className="top-bottom">
+          2. Top/Bottom counters
+          <Counter location={topCounter}/>
+          <Counter location={bottomCounter}/>
+        </div>
+        <div className="sum-all-clicks">
+          3. Number of times all counters were incremented
+          <ClickCounter/>
+        </div>
       </div>
     )
   }
-        //<ClickCounter/>
-        //<MultiplyAll/>
+        //<Counter location={topLocation}/>
+
+
+  //<MultiplyAll/>
 }
 //function mapStateToProps(state) {
 //  return {

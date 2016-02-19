@@ -1,11 +1,12 @@
 import {INIT_REDUX_OPERATIONS} from 'redux-operations';
-const INCREMENT_COUNTER = 'INCREMENT_COUNTER'
-const DECREMENT_COUNTER = 'DECREMENT_COUNTER'
-const INCREMENT_ASYNC = 'INCREMENT_ASYNC'
-const INCREMENT_IF_ODD = 'INCREMENT_IF_ODD'
-const SET_COUNTER = 'SET_COUNTER'
+export const INCREMENT_COUNTER = 'INCREMENT_COUNTER'
+export const DECREMENT_COUNTER = 'DECREMENT_COUNTER'
+export const INCREMENT_ASYNC = 'INCREMENT_ASYNC'
+export const INCREMENT_IF_ODD = 'INCREMENT_IF_ODD'
+export const SET_COUNTER = 'SET_COUNTER'
 
 export function increment(location, name) {
+  debugger
   return {
     type: INCREMENT_COUNTER,
     meta: {location, name}

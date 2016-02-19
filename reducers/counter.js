@@ -1,30 +1,6 @@
 //import { INCREMENT_COUNTER, DECREMENT_COUNTER, INCREMENT_COUNTER2, DECREMENT_COUNTER2, increment } from '../actions/counter';
 //import {INIT_REDUX_OPERATIONS} from 'redux-operations';
 //
-//export const clickCounter = (state = 0, action) => {
-//  if (action.type !== INIT_REDUX_OPERATIONS) return state;
-//  return {
-//    INCREMENT_COUNTER: {
-//      priority: 10,
-//      resolve: (state = 0, action)=> {
-//        console.log('click counter called - increment');
-//        return state + 1;
-//      },
-//      description: 'inc counter on click counter',
-//      arguments: {
-//        newCounterVal: {type: Number, description: 'the new counter val'}
-//      }
-//    },
-//    INCREMENT_ASYNC: {
-//      priority: 10,
-//      resolve: (state = 0, action)=> {
-//        console.log('click counter called - inc async');
-//        return state + 1;
-//      }
-//    },
-//    signature: '@@reduxOperations'
-//  }
-//}
 //
 //export const multiplyAll = (state = 0, action) => {
 //  if (action.type === INIT_REDUX_OPERATIONS) {

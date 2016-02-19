@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 
 const mapStateToProps = (state, props) => {
   return {
-    counter: walkState(props.location, state, counter)
+    counter: props.location ? walkState(props.location, state, counter) : state.counter
   }
 }
 
