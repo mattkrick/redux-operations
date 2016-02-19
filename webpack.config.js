@@ -1,9 +1,27 @@
 var path = require('path')
 var webpack = require('webpack')
 
+
+const babelQuery = {
+  "plugins": [
+    ["transform-decorators-legacy"],
+    ["react-transform", {
+      "transforms": [{
+        "transform": "react-transform-hmr",
+        "imports": ["react"],
+        "locals": ["module"]
+      }, {
+        "transform": "react-transform-catch-errors",
+        "imports": ["react", "redbox-react"]
+      }]
+    }]
+  ]
+}
+
 module.exports = {
   devtool: 'source-map',
   entry: [
+    'babel-polyfill',
     'webpack-hot-middleware/client',
     './index'
   ],
@@ -21,8 +39,9 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        loaders: [ 'babel' ],
+        loader: 'babel',
         exclude: /node_modules/,
+        query: babelQuery,
         include: __dirname
       }
     ]

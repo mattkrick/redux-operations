@@ -8,6 +8,10 @@ export const clickCounter = (state = 0, action) => {
         reducer: (state = 0, action)=> {
           console.log('click counter called - increment');
           return state+1;
+        },
+        description: 'inc counter on click counter',
+        args: {
+          newCounterVal: {type: Number, description: 'the new counter val'}
         }
       },
       INCREMENT_ASYNC: {
