@@ -1,14 +1,15 @@
 import React, { Component, PropTypes } from 'react'
-import {walkState} from '../store/reduxOperations';
-import {increment1, incrementAsync} from '../actions/counter';
+import {walkState} from 'redux-operations';
+import {increment, incrementAsync, decrement, incrementIfOdd, setCounter, counter} from '../ducks/counter';
 import {connect} from 'react-redux';
+//import {counter} from '../reducers/counter'
+
 
 const mapStateToProps = (state, props) => {
   return {
-    counter: walkState(props.location, state)
+    counter: walkState(props.location, state, counter)
   }
 }
-
 
 @connect(mapStateToProps)
 export default class Counter extends Component {
@@ -19,18 +20,19 @@ export default class Counter extends Component {
         <p>
           Clicked: {counter} times
           {' '}
-          <button onClick={() => dispatch(increment1(location, 'counter'))}>+</button>
+          <button onClick={() => dispatch(increment(location, 'counter'))}>+</button>
+          {' '}
+          <button onClick={() => dispatch(decrement(location, 'counter'))}>-</button>
+          {' '}
+          <button onClick={() => dispatch(incrementIfOdd(location, 'counter'))}>+ if odd</button>
           {' '}
           <button onClick={() => dispatch(incrementAsync(location, 'counter'))}>Async +</button>
+          {' '}
+          <input type="number" ref="setInput" size="5" defaultValue="0"/>
+          <button onClick={() => dispatch(setCounter(this.refs['setInput'].value,location, 'counter'))}>Set input</button>
           {' '}
         </p>
       </div>
     )
-  }
-
-  inc1 = () => {
-    const {dispatch, location} = this.props;
-    console.log(location);
-    dispatch(increment1(location, 'counter'))
   }
 }

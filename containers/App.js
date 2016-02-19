@@ -2,7 +2,7 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 import Counter from '../components/Counter'
 import ClickCounter from '../components/ClickCounter'
-import MultiplyAll from '../components/MultiplyAll'
+//import MultiplyAll from '../components/MultiplyAll'
 import React, { Component, PropTypes } from 'react'
 
 const counter1Location = ['counters', 'counter1'];
@@ -12,14 +12,17 @@ export default class Counters extends Component {
   render() {
     return (
       <div>
+        <div className="plain-counter">
+          1. Plain counter
+        </div>
         <Counter location={counter1Location}/>
         <Counter location={counter2Location}/>
         <Counter location={counter1Location}/>
-        <ClickCounter/>
-        <MultiplyAll/>
       </div>
     )
   }
+        //<ClickCounter/>
+        //<MultiplyAll/>
 }
 //function mapStateToProps(state) {
 //  return {

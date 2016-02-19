@@ -1,5 +1,5 @@
 import { createStore, compose } from 'redux'
-import reduxOperations from './reduxOperations';
+import {reduxOperations} from 'redux-operations';
 import reducer from '../reducers'
 
 
