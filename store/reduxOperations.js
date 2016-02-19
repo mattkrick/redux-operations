@@ -49,6 +49,7 @@ function liftReducerWith(reducer, initialCommittedState, monitorReducer) {
     let activeState = reducer(userState, liftedAction);
     if (liftedAction.type === INIT) {
       const qlInit = {type: 'INITQL'};
+      debugger
       const initResult = reducer(undefined, qlInit);
       api = {};
       makeStoreOperations(api, initResult);
@@ -87,32 +88,32 @@ function unliftState(liftedState) {
   return liftedState.userState;
 }
 
-function unliftStore(liftedStore, liftReducer) {
+function unliftStore(reduxOperationStore, liftReducer) {
   return {
-    ...liftedStore,
+    ...reduxOperationStore,
 
-    liftedStore,
+    reduxOperationStore,
 
     dispatch(action) {
       action.meta = action.meta || {};
-      action.meta.dispatch = liftedStore.dispatch;
-      liftedStore.dispatch(action);
+      action.meta.dispatch = reduxOperationStore.dispatch;
+      reduxOperationStore.dispatch(action);
       return action;
     },
 
     getState() {
-      return unliftState(liftedStore.getState());
+      return unliftState(reduxOperationStore.getState());
     },
 
     replaceReducer(nextReducer) {
-      liftedStore.replaceReducer(liftReducer(nextReducer));
+      reduxOperationStore.replaceReducer(liftReducer(nextReducer));
     }
   };
 }
 
 export default function instrument() {
   return createStore => (reducer, initialState, enhancer) => {
-
+    debugger
     function liftReducer(r) {
       if (typeof r !== 'function') {
         if (r && typeof r.default === 'function') {
@@ -128,14 +129,14 @@ export default function instrument() {
       return liftReducerWith(r, initialState);
     }
 
-    const liftedStore = createStore(liftReducer(reducer), enhancer);
-    if (liftedStore.liftedStore) {
+    const reduxOperationStore = createStore(liftReducer(reducer), enhancer);
+    if (reduxOperationStore.reduxOperationStore) {
       throw new Error(
         'DevTools instrumentation should not be applied more than once. ' +
         'Check your store configuration.'
       );
     }
 
-    return unliftStore(liftedStore, liftReducer);
+    return unliftStore(reduxOperationStore, liftReducer);
   };
 }
