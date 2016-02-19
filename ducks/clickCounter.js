@@ -2,7 +2,6 @@ import {INIT_REDUX_OPERATIONS} from 'redux-operations';
 import {INCREMENT_COUNTER} from './counter';
 
 export const clickCounter = (state = 0, action) => {
-  debugger
   if (action.type !== INIT_REDUX_OPERATIONS) return state;
   return {
     INCREMENT_COUNTER: {

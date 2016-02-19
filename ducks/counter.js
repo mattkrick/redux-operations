@@ -6,7 +6,6 @@ export const INCREMENT_IF_ODD = 'INCREMENT_IF_ODD'
 export const SET_COUNTER = 'SET_COUNTER'
 
 export function increment(location, name) {
-  debugger
   return {
     type: INCREMENT_COUNTER,
     meta: {location, name}
@@ -69,7 +68,10 @@ export const counter = (state = 0, action) => {
       }
     },
     SET_COUNTER: {
-      resolve: (state = 0, action) => action.payload.newValue
+      resolve: (state = 0, action) => action.payload.newValue,
+      arguments: {
+        newValue: {type: Number, description: 'The new value for the counter'}
+      }
     },
     signature: '@@reduxOperations'
   }
