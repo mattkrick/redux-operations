@@ -1,5 +1,6 @@
 import {ActionTypes} from 'redux/lib/createStore';
 const {INIT} = ActionTypes;
+var INIT_ACTION = { type: '@@INIT' };
 
 export const walkState = (locationStack, state) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
@@ -47,7 +48,7 @@ function liftReducerWith(reducer, initialCommittedState, monitorReducer) {
   return (liftedState = initialLiftedState, liftedAction) => {
     let {api,userState} = liftedState;
     let activeState = reducer(userState, liftedAction);
-    if (liftedAction.type === INIT) {
+    if (liftedAction.type === INIT || liftedAction.type === INIT_ACTION.type) {
       const qlInit = {type: 'INITQL'};
       debugger
       const initResult = reducer(undefined, qlInit);

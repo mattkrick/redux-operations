@@ -3,14 +3,16 @@ import reduxOperations from './reduxOperations';
 import reducer from '../reducers'
 
 
-export default function configureStore(initialState) {
-  //return compose(reduxOperations(), window.devToolsExtension())(createStore)(reducer, initialState);
-  //const reduxOpSCreateStore = reduxOperations()(createStore);
-  debugger
-  const store = window.devToolsExtension()(reduxOperations()(createStore))(reducer, initialState);
-  return store
-  //const store = createStore(reducer, initialState)
-  //const reduxOpSCreateStore = reduxOperations()(createStore);
-  //return window.devToolsExtension()(reduxOpSCreateStore)(reducer,initialState);
-}
+const enhancer = compose(
+    // Middleware you want to use in development:
+    reduxOperations(),
+    // Required! Enable Redux DevTools with the monitors you chose
+    window.devToolsExtension()
+);
 
+export default function configureStore(initialState) {
+  // Note: only Redux >= 3.1.0 supports passing enhancer as third argument.
+  // See https://github.com/rackt/redux/releases/tag/v3.1.0
+  const store = createStore(reducer, initialState, enhancer);
+  return store;
+}
