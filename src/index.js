@@ -4,12 +4,12 @@ export const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 export const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
 
-export const walkState = (locationStack, state) => {
+export const walkState = (locationStack =[], state, initializer) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
     if (!reduction[key]) {
       reduction[key] = (currentIdx === locationStack.length - 1) ? undefined : {};
     }
-    return reduction[key];
+    return reduction[key] || initializer && initializer(undefined, {type:INIT_REDUX});
   }, state);
 };
 
