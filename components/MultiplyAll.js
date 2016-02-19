@@ -8,7 +8,7 @@ const mapStateToProps = (state) => {
 }
 
 @connect(mapStateToProps)
-export default class ClickCounter extends Component {
+export default class MultiplyAll extends Component {
   render() {
     const {result} = this.props
     return (

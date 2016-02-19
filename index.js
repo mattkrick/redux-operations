@@ -3,12 +3,16 @@ import { render } from 'react-dom'
 import { Provider } from 'react-redux'
 import Counters from './containers/App'
 import configureStore from './store/configureStore'
+import DevTools from './DevTools';
 
-const store = configureStore()
+const store = configureStore();
 
 render(
   <Provider store={store}>
-    <Counters />
+    <div>
+      <Counters />
+      <DevTools/>
+    </div>
   </Provider>,
-  document.getElementById('root')
+document.getElementById('root')
 )
