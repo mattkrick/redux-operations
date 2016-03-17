@@ -6,10 +6,9 @@ export const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
 export const walkState = (locationStack =[], state, initializer) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
-    if (!reduction[key]) {
-      reduction[key] = (currentIdx === locationStack.length - 1) ? undefined : {};
-    }
-    return reduction[key] || initializer && initializer(undefined, {type:INIT_REDUX});
+    return reduction && reduction.hasOwnProperty(key) ? reduction[key] :
+        (currentIdx === locationStack.length - 1) ? initializer && initializer(undefined, {type:111}) :
+        {}
   }, state);
 };
 
@@ -41,22 +40,23 @@ const makeStoreAPI = initResult => {
 };
 
 const makeStoreOperations = (storeOperations, state, stack = [], key) => {
-  if (state && typeof state === 'object' && state.signature === REDUX_OPERATION_SIGNATURE) {
-    Object.keys(state).filter(key => key !== 'signature').forEach(operation => {
-      storeOperations[operation] = storeOperations[operation] || {};
-      storeOperations[operation].operationArray = storeOperations[operation].operationArray || [];
-      storeOperations[operation].operationArray.push({
-        ...state[operation],
-        defaultLocation: [...stack],
-        name: key
+  if (state && typeof state === 'object')
+    if(state.signature === REDUX_OPERATION_SIGNATURE) {
+      Object.keys(state).filter(key => key !== 'signature').forEach(operation => {
+        storeOperations[operation] = storeOperations[operation] || {};
+        storeOperations[operation].operationArray = storeOperations[operation].operationArray || [];
+        storeOperations[operation].operationArray.push({
+          ...state[operation],
+          defaultLocation: [...stack],
+          name: key
+        })
       })
-    })
-  } else {
-    Object.keys(state).forEach(key => {
-      stack.push(key);
-      makeStoreOperations(storeOperations, state[key], stack, key);
-    })
-  }
+    } else {
+      Object.keys(state).forEach(key => {
+        stack.push(key);
+        makeStoreOperations(storeOperations, state[key], stack, key);
+      })
+    }
   stack.pop();
 };
 
@@ -67,32 +67,30 @@ const liftReducerWith = (reducer, initialCommittedState) => {
 
   return (liftedState = initialLiftedState, liftedAction) => {
     let {api, userState} = liftedState;
-    let activeState = reducer(userState, liftedAction);
     if (liftedAction.type === INIT_REDUX || liftedAction.type === INIT_DEVTOOLS) {
       const initResult = reducer(undefined, {type: INIT_REDUX_OPERATIONS});
       api = makeStoreAPI(initResult);
     }
-    else {
-      const actionObject = api[liftedAction.type] || {};
-      const operationArray = actionObject.operationArray;
-      if (operationArray) {
-        operationArray.forEach(operation => {
-          let locationStack = operation.defaultLocation;
-          // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
-          // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
-          // Otherwise, use default
-          if (liftedAction.meta.location && (!liftedAction.meta.name || operation.name === liftedAction.meta.name)) {
-            locationStack = liftedAction.meta.location
-          }
-          const subState = walkState(locationStack, activeState);
-          const newSubState = operation.resolve(subState, liftedAction);
-          if (subState !== newSubState) {
-            activeState = appendChangeToState(locationStack, activeState, newSubState);
-          }
-          liftedAction.meta.operationResults = liftedAction.meta.operationResults || {};
-          liftedAction.meta.operationResults[operation.name] = {oldState: subState, state: newSubState};
-        })
-      }
+    let activeState = reducer(userState, liftedAction);
+    const actionObject = api[liftedAction.type] || {};
+    const operationArray = actionObject.operationArray;
+    if (operationArray) {
+      operationArray.forEach(operation => {
+        let locationStack = operation.defaultLocation;
+        // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
+        // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
+        // Otherwise, use default
+        if (liftedAction.meta.location && (!liftedAction.meta.name || operation.name === liftedAction.meta.name)) {
+          locationStack = liftedAction.meta.location
+        }
+        const subState = walkState(locationStack, activeState);
+        const newSubState = operation.resolve(subState, liftedAction);
+        if (subState !== newSubState) {
+          activeState = appendChangeToState(locationStack, activeState, newSubState);
+        }
+        liftedAction.meta.operationResults = liftedAction.meta.operationResults || {};
+        liftedAction.meta.operationResults[operation.name] = {oldState: subState, state: newSubState};
+      })
     }
     return {
       api,
@@ -136,7 +134,7 @@ export const reduxOperations = () => {
     }
     const reduxOperationStore = createStore(liftReducer(reducer), enhancer);
     if (reduxOperationStore.reduxOperationStore) {
-      throw new Error('reduxOperation should not be applied more than once. Check your store configuration.');
+      throw new Error('redux operation should not be applied more than once. Check your store configuration.');
     }
     return unliftStore(reduxOperationStore, liftReducer);
   };
