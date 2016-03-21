@@ -5,17 +5,23 @@ const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
 
 export const walkState = (locationStack = [], state, initializer) => {
+  //TODO maybe memoize?
   return locationStack.reduce((reduction, key, currentIdx) => {
-    return reduction && reduction.hasOwnProperty(key) ? reduction[key] :
-      (currentIdx === locationStack.length - 1) ? initializer && initializer(undefined, {type: 111}) :
-      {}
+    if (reduction.hasOwnProperty(key)) {
+      return reduction[key];
+    } else if (currentIdx === locationStack.length - 1) {
+      return (typeof initializer === 'function') && initializer();
+    } else {
+      return {};
+    }
   }, state);
 };
 
-
 export const operationReducerFactory = (defaultState, reducerObject) => {
-  return (state = defaultState, action) => {
+  return (state = defaultState, action = {}) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
+
+    //For each operation, set the defaultState as the default value
     Object.keys(reducerObject).forEach(operation => {
       const resolveFunc = reducerObject[operation].resolve;
       reducerObject[operation].resolve = (state = defaultState, action) => resolveFunc(state, action)
@@ -28,11 +34,12 @@ export const operationReducerFactory = (defaultState, reducerObject) => {
 };
 
 const appendChangeToState = (locationStack, state, newSubState) => {
+  const nextLocation = locationStack[0];
   if (locationStack.length === 1) {
-    return Object.assign({}, state, {[locationStack[0]]: newSubState});
+    return {...state, [nextLocation]: newSubState};
   } else {
-    const subObject = appendChangeToState(locationStack.slice(1), state[locationStack[0]], newSubState);
-    return Object.assign({}, state, {[locationStack[0]]: subObject});
+    const subObject = appendChangeToState(locationStack.slice(1), state[nextLocation], newSubState);
+    return {...state, [nextLocation]: subObject}
   }
 };
 
@@ -155,4 +162,3 @@ export const reduxOperations = () => {
     return unliftStore(reduxOperationStore, liftReducer);
   };
 };
-
