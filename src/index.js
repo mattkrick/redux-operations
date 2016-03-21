@@ -3,7 +3,6 @@ const INIT_DEVTOOLS = '@@INIT';
 export const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 export const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
-
 export const walkState = (locationStack =[], state, initializer) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
     return reduction && reduction.hasOwnProperty(key) ? reduction[key] :
@@ -17,9 +16,9 @@ export const operationReducerFactory = (defaultState, reducerObject)=>
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
     return {
       ...reducerObject,
-      signature: '@@reduxOperations'
+      signature: REDUX_OPERATION_SIGNATURE
     }
-  }
+  };
 
 const appendChangeToState = (locationStack, state, newSubState) => {
   if (locationStack.length === 1) {
