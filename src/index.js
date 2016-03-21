@@ -12,9 +12,14 @@ export const walkState = (locationStack = [], state, initializer) => {
   }, state);
 };
 
+
 export const operationReducerFactory = (defaultState, reducerObject) => {
   return (state = defaultState, action) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
+    Object.keys(reducerObject).forEach(operation => {
+      const resolveFunc = reducerObject[operation].resolve;
+      reducerObject[operation].resolve = (state = defaultState, action) => resolveFunc(state, action)
+    });
     return {
       ...reducerObject,
       signature: REDUX_OPERATION_SIGNATURE
