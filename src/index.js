@@ -1,25 +1,26 @@
 const INIT_REDUX = '@@redux/INIT';
 const INIT_DEVTOOLS = '@@INIT';
-export const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
-export const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
+const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
+const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
 
-export const walkState = (locationStack =[], state, initializer) => {
+export const walkState = (locationStack = [], state, initializer) => {
   return locationStack.reduce((reduction, key, currentIdx) => {
     return reduction && reduction.hasOwnProperty(key) ? reduction[key] :
-        (currentIdx === locationStack.length - 1) ? initializer && initializer(undefined, {type:111}) :
-        {}
+      (currentIdx === locationStack.length - 1) ? initializer && initializer(undefined, {type: 111}) :
+      {}
   }, state);
 };
 
-export const operationReducerFactory = (defaultState, reducerObject)=>
-  (state=defaultState, action) => {
+export const operationReducerFactory = (defaultState, reducerObject) => {
+  return (state = defaultState, action) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
     return {
       ...reducerObject,
-      signature: '@@reduxOperations'
+      signature: REDUX_OPERATION_SIGNATURE
     }
   }
+};
 
 const appendChangeToState = (locationStack, state, newSubState) => {
   if (locationStack.length === 1) {
@@ -50,7 +51,7 @@ const makeStoreAPI = initResult => {
 
 const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   if (state && typeof state === 'object')
-    if(state.signature === REDUX_OPERATION_SIGNATURE) {
+    if (state.signature === REDUX_OPERATION_SIGNATURE) {
       Object.keys(state).filter(key => key !== 'signature').forEach(operation => {
         storeOperations[operation] = storeOperations[operation] || {};
         storeOperations[operation].operationArray = storeOperations[operation].operationArray || [];
@@ -141,9 +142,10 @@ export const reduxOperations = () => {
       }
       return liftReducerWith(r, initialState);
     }
+
     const reduxOperationStore = createStore(liftReducer(reducer), enhancer);
     if (reduxOperationStore.reduxOperationStore) {
-      throw new Error('redux operation should not be applied more than once. Check your store configuration.');
+      throw new Error('redux-operations should not be applied more than once. Check your store configuration.');
     }
     return unliftStore(reduxOperationStore, liftReducer);
   };
