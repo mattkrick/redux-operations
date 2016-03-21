@@ -12,6 +12,15 @@ export const walkState = (locationStack =[], state, initializer) => {
   }, state);
 };
 
+export const operationReducerFactory = (defaultState, reducerObject)=>
+  (state=defaultState, action) => {
+    if (action.type !== INIT_REDUX_OPERATIONS) return state;
+    return {
+      ...reducerObject,
+      signature: '@@reduxOperations'
+    }
+  }
+
 const appendChangeToState = (locationStack, state, newSubState) => {
   if (locationStack.length === 1) {
     return Object.assign({}, state, {[locationStack[0]]: newSubState});
