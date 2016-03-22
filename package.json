@@ -1,6 +1,6 @@
 {
   "name": "redux-operations",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Prioritized waterfall reducers for predictable, dynamic, multi reducers with a visual API",
   "main": "./lib/index.js",
   "scripts": {
