@@ -4,6 +4,29 @@ const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
 
+const bindOperationToActionCreator = (locationInState, operationName, actionCreator) => {
+  return (...args) => {
+    const action = actionCreator(...args);
+    action.meta = {...action.meta, operations: {locationInState, operationName}};
+    return action;
+  }
+};
+
+export const bindOperationToActionCreators = (locationInState, operationName, actionCreators) => {
+  if (typeof actionCreators === 'function') {
+    return bindOperationToActionCreator(locationInState, operationName, actionCreators);
+  }
+
+  if (typeof actionCreators !== 'object' || actionCreators === null) {
+    throw new Error(`bindOperationToActionCreators requires a function or object full of functions`);
+  }
+
+  return Object.keys(actionCreators).reduce((reduction, actionCreator) => {
+    reduction[actionCreator] = bindOperationToActionCreator(locationInState, operationName, actionCreators[actionCreator]);
+    return reduction;
+  }, {});
+}
+
 export const walkState = (locationStack = [], state, initializer) => {
   //TODO maybe memoize?
   return locationStack.reduce((reduction, key, currentIdx) => {
@@ -102,16 +125,16 @@ const liftReducerWith = (reducer, initialCommittedState) => {
         // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
         // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
         // Otherwise, use default
-        if (liftedAction.meta.location && (!liftedAction.meta.name || operation.name === liftedAction.meta.name)) {
-          locationStack = liftedAction.meta.location
+        if (liftedAction.meta.operations.locationInState && (!liftedAction.meta.operations.operationName || operation.name === liftedAction.meta.operations.operationName)) {
+          locationStack = liftedAction.meta.operations.locationInState
         }
         const subState = walkState(locationStack, activeState);
         const newSubState = operation.resolve(subState, liftedAction);
         if (subState !== newSubState) {
           activeState = appendChangeToState(locationStack, activeState, newSubState);
         }
-        liftedAction.meta.operationResults = liftedAction.meta.operationResults || {};
-        liftedAction.meta.operationResults[operation.name] = {oldState: subState, state: newSubState};
+        liftedAction.meta.operations.results = liftedAction.meta.operations.results || {};
+        liftedAction.meta.operations.results[operation.name] = {oldState: subState, state: newSubState};
       })
     }
     return {
@@ -131,7 +154,8 @@ const unliftStore = (reduxOperationStore, liftReducer) => {
 
     dispatch(action) {
       action.meta = action.meta || {};
-      action.meta.dispatch = reduxOperationStore.dispatch;
+      action.meta.operations = action.meta.operations || {};
+      action.meta.operations.dispatch = reduxOperationStore.dispatch;
       reduxOperationStore.dispatch(action);
       return action;
     },
