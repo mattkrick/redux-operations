@@ -59,24 +59,29 @@ There's no need to adjust any of your code, your application only sees what's in
 ###Write your reducer
 
 When your store is created, redux-operations ignores your regular reducers and only uses reducers designed for it.
-These are easily created by using a reducer factory that takes in an `initialState` and an object full of "operations".
+These are easily created by using a reducer factory that takes in an `operationName`, `initialState` and an object full of "operations".
 An operation is an action that is specific to the reducer. In other words, one action type has 1 or many operations.
 This already occurs in the wild, but the execution order is arbitrary and intermediary results are not passed through.
+The operationName is the same name that you use in your `combineReducers`. By making you repeat that name here, we allow for perfect compatibility with standard redux.
 
 #### API
-`operationReducerFactory(initialState, reducerObject);`
+`operationReducerFactory(operationName, initialState, reducerObject);`
 
 #### Example
 ```js
 import {operationReducerFactory} from 'redux-operations';
 const initialState = 0;
-export const counter = operationReducerFactory(initialState, {
+export const counter = operationReducerFactory('counter', initialState, {
+  INCREMENT_COUNTER: {
+    resolve: (state, action)=> state + 1
+  },
   INCREMENT_ASYNC: {
     priority: 1, // if this action type is used in another reducer, this determines which runs first
     resolve: (state, action)=> {
       setTimeout(()=> {
-        const {dispatch, locationInState, operationName} = action.meta.operations;
-        const inc = bindOperationToActionCreators(locationInState, operationName, increment);
+        const {dispatch, locationInState} = action.meta.operations;
+        // yes, that counter variable below is a circular reference to the reducer object
+        const inc = bindOperationToActionCreators(locationInState, counter, increment);
         dispatch(inc());
       }, 1000);
       return state;
@@ -98,7 +103,7 @@ In plain redux, this logic is split between the action creator and the resolve f
 redux-operations works with all frontend frameworks, but we'll show an example of it working in react.
 For the example, imagine you have 2 counters that share the same reducer. 
 You need to know where in the state tree to find each (called `locationInState`)
-as well as the operation to run on a particular action (called `operationName`).
+and the `reducerObject` so it can initialize the state at runtime (for dynamically generated states)
 
 First, we need to get the possibly-dynamic state from the state tree.
 
@@ -119,23 +124,25 @@ const mapStateToProps = (state, props) => {
 ```
 
 Next, we need to make sure that our action creators attach this info to the new actions.
-This is done by attaching `locationInState` and `operationName` to the `action.meta.operations` property. 
+This is done by attaching `locationInState` and the `operationName` to the `action.meta.operations` property.
+Since the `operationName` is stored in the `reducerObject`, we just pass that in.
 To make it easy, redux-operations offers a HOF to do the work for you. 
 It takes in a single function or an object of functions, similar to redux's `bindDispatchToActions`.
 
 #### API
-`bindOperationtToActionCreators(actionCreator|actionCreators);`
+`bindOperationtToActionCreators(locationInState, reducerObject, actionCreators);`
 
 #### Example
 ```js
 import {bindOperationToActionCreators} from 'redux-operations';
+import {counterReducer} from './counterReducer';
 import * from './actionCreators';
 import {connect} from 'react-redux';
 
 @connect(mapStateToProps)
 export default class Counter extends Component {
  render() {
-    const {incrementAsync} = bindOperationToActionCreators(['counters', 'top'], 'counter', actionCreators);
+    const {incrementAsync} = bindOperationToActionCreators(['counters', 'top'], counterReducer, actionCreators);
     return (
       <div>
         <button onClick={() => dispatch(increment())}>+</button>
