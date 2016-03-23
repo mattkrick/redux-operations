@@ -85,7 +85,17 @@ export const operationReducerFactory = (initialState, reducerObject) => {
     //For each operation, set the initialState as the default value
     Object.keys(reducerObject).forEach(operation => {
       const resolveFunc = reducerObject[operation].resolve;
-      reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action)
+      reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action);
+      reducerObject[operation].resolve.toString = () => '<Resolve Function>';
+      const args = reducerObject[operation].arguments;
+      if (typeof args === 'object' && args !== null) {
+        Object.keys(args).forEach(arg => {
+          const curArg = args[arg];
+          if (typeof curArg.type === 'function') {
+            curArg.type.toString = () => `<${curArg.type.name}>`;
+          }
+        })
+      }
     });
     return {
       ...reducerObject,
