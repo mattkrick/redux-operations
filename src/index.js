@@ -17,12 +17,13 @@ const bindOperationToActionCreator = (locationInState, operationName, actionCrea
  * The same can be accomplished by manually passing this info into your action creators.
  *
  * @param {Array} locationInState the stack that takes you from store.getState() to your specified component state
- * @param {String} operationName the name of the operation, usually the reducer's name
+ * @param {Function} reducer the reducer associated with this action. We just use it to grab the name
  * @param {Function|Object} actionCreators a redux action creator or object of many action creators
  *
  * @returns {Function|Object} actionCreators that automatically assign operations metadata to themselves
  */
-export const bindOperationToActionCreators = (locationInState, operationName, actionCreators) => {
+export const bindOperationToActionCreators = (locationInState, reducer, actionCreators) => {
+  const operationName = reducer.name;
   if (typeof actionCreators === 'function') {
     return bindOperationToActionCreator(locationInState, operationName, actionCreators);
   }
@@ -44,7 +45,7 @@ export const bindOperationToActionCreators = (locationInState, operationName, ac
  *
  * @param {Array} locationInState the stack that takes you from store.getState() to your specified component state
  * @param {Object} state the redux state
- * @initializer {Function} the redux-operations reducer (not your rootReducer)
+ * @param {Function} initializer the redux-operations reducer (not your rootReducer)
  *
  * @returns {*} the desired subState
  */
@@ -64,6 +65,7 @@ export const walkState = (locationInState = [], state, initializer) => {
 /**
  * A custom factory to create a reducer full of operations specifically for redux-operations
  *
+ * @param {String} operationName the name that you pass into your combineReducers function
  * @param {*} initialState the initial state for components using this reducer, same as what you'd use for redux.
  * @param {Object} reducerObject an object where each property key is a redux actionType.
  *
@@ -78,8 +80,8 @@ export const walkState = (locationInState = [], state, initializer) => {
  *
  * @returns {Function} a redux-operations reducer that plays well with other reducers
  */
-export const operationReducerFactory = (initialState, reducerObject) => {
-  return (state = initialState, action = {}) => {
+export const operationReducerFactory = (operationName, initialState, reducerObject) => {
+   const reducer = (state = initialState, action = {}) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
 
     //For each operation, set the initialState as the default value
@@ -101,7 +103,9 @@ export const operationReducerFactory = (initialState, reducerObject) => {
       ...reducerObject,
       signature: REDUX_OPERATION_SIGNATURE
     }
-  }
+  };
+  reducer.name = operationName;
+  return reducer;
 };
 
 /**
