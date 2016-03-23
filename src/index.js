@@ -3,7 +3,6 @@ const INIT_DEVTOOLS = '@@INIT';
 const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
-
 const bindOperationToActionCreator = (locationInState, operationName, actionCreator) => {
   return (...args) => {
     const action = actionCreator(...args);
@@ -12,6 +11,17 @@ const bindOperationToActionCreator = (locationInState, operationName, actionCrea
   }
 };
 
+/**
+ * Binds the locationInState and operationName to every actionCreator. After the action is created with the
+ * enhanced function, the action will contain a meta.operations property that is used internally by redux-operations.
+ * The same can be accomplished by manually passing this info into your action creators.
+ *
+ * @param {Array} locationInState the stack that takes you from store.getState() to your specified component state
+ * @param {String} operationName the name of the operation, usually the reducer's name
+ * @param {Function|Object} actionCreators a redux action creator or object of many action creators
+ *
+ * @returns {Function|Object} actionCreators that automatically assign operations metadata to themselves
+ */
 export const bindOperationToActionCreators = (locationInState, operationName, actionCreators) => {
   if (typeof actionCreators === 'function') {
     return bindOperationToActionCreator(locationInState, operationName, actionCreators);
@@ -25,14 +35,25 @@ export const bindOperationToActionCreators = (locationInState, operationName, ac
     reduction[actionCreator] = bindOperationToActionCreator(locationInState, operationName, actionCreators[actionCreator]);
     return reduction;
   }, {});
-}
+};
 
-export const walkState = (locationStack = [], state, initializer) => {
+/**
+ * Given the redux state, walkState uses the locationInState stack as a map to get to your
+ * desired subState. If it doesn't exist yet, it creates it & initializes it based on the defaultValue
+ * supplied in your reducer. This is commonly used in react-redux's mapStateToProps for dynamic states.
+ *
+ * @param {Array} locationInState the stack that takes you from store.getState() to your specified component state
+ * @param {Object} state the redux state
+ * @initializer {Function} the redux-operations reducer (not your rootReducer)
+ *
+ * @returns {*} the desired subState
+ */
+export const walkState = (locationInState = [], state, initializer) => {
   //TODO maybe memoize?
-  return locationStack.reduce((reduction, key, currentIdx) => {
+  return locationInState.reduce((reduction, key, currentIdx) => {
     if (reduction.hasOwnProperty(key)) {
       return reduction[key];
-    } else if (currentIdx === locationStack.length - 1) {
+    } else if (currentIdx === locationInState.length - 1) {
       return (typeof initializer === 'function') && initializer();
     } else {
       return {};
@@ -40,14 +61,31 @@ export const walkState = (locationStack = [], state, initializer) => {
   }, state);
 };
 
-export const operationReducerFactory = (defaultState, reducerObject) => {
-  return (state = defaultState, action = {}) => {
+/**
+ * A custom factory to create a reducer full of operations specifically for redux-operations
+ *
+ * @param {*} initialState the initial state for components using this reducer, same as what you'd use for redux.
+ * @param {Object} reducerObject an object where each property key is a redux actionType.
+ *
+ * @property {Object} actionType an object that holds the priority, resolve, and arguments of a specific operation.
+ * @property {Number} actionType.priority a priority assigned to the operation. If multiple reducers share the same
+ * action type, the one with a lower priority will run first. Defaults to 0.
+ * @property {Function} actionType.resolve the reducer function that receives state and the
+ * overloaded action (includes meta.operations) and runs on a dispatch
+ * @property {Object} actionType.arguments AN object of arguments that are expected to be present in the payload
+ * @property {Function} argument.type The expected constructor for the given argument
+ * @property {String} argument.description A brief description of the argument passed into the payload
+ *
+ * @returns {Function} a redux-operations reducer that plays well with other reducers
+ */
+export const operationReducerFactory = (initialState, reducerObject) => {
+  return (state = initialState, action = {}) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
 
-    //For each operation, set the defaultState as the default value
+    //For each operation, set the initialState as the default value
     Object.keys(reducerObject).forEach(operation => {
       const resolveFunc = reducerObject[operation].resolve;
-      reducerObject[operation].resolve = (state = defaultState, action) => resolveFunc(state, action)
+      reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action)
     });
     return {
       ...reducerObject,
@@ -56,19 +94,35 @@ export const operationReducerFactory = (defaultState, reducerObject) => {
   }
 };
 
-const appendChangeToState = (locationStack, state, newSubState) => {
-  const nextLocation = locationStack[0];
-  if (locationStack.length === 1) {
+/**
+ * An internal function that dynamically mutates the redux state.
+ *
+ * @param {Array} locationInState the stack that takes you from store.getState() to your specified component state
+ * @param {Object} state the redux state
+ * @param {Object} newSubState the newly created subState that will overwrite the state at locationInState
+ *
+ * @returns {Object} new state
+ */
+const appendChangeToState = (locationInState, state, newSubState) => {
+  const nextLocation = locationInState[0];
+  if (locationInState.length === 1) {
     return {...state, [nextLocation]: newSubState};
   } else {
-    const subObject = appendChangeToState(locationStack.slice(1), state[nextLocation], newSubState);
+    const subObject = appendChangeToState(locationInState.slice(1), state[nextLocation], newSubState);
     return {...state, [nextLocation]: subObject}
   }
 };
 
-const makeStoreAPI = initResult => {
+/**
+ * An internal function that generates the redux-operations API.
+ *
+ * @param {*} initialResult the state after initialization & populated with initial values
+ *
+ * @returns {Object} the beautiful visual API as seen in redux devtools
+ */
+const makeStoreAPI = initialResult => {
   const api = {};
-  makeStoreOperations(api, initResult);
+  makeStoreOperations(api, initialResult);
   Object.keys(api).forEach(action => {
     api[action].operationArray.sort((a, b) => {
       const priorityA = a.priority || 0;
@@ -84,6 +138,12 @@ const makeStoreAPI = initResult => {
   return api;
 };
 
+/**
+ * An internal function that picks out the reducers that are specially created
+ * for redux-operations. It then provides a defaultLocation for components that don't need
+ * to be dynamically created. It also provides a name that will be compared to operationName in walkState,
+ * which is generally provided in the reducer or component layer.
+ */
 const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   if (state && typeof state === 'object')
     if (state.signature === REDUX_OPERATION_SIGNATURE) {
@@ -105,6 +165,14 @@ const makeStoreOperations = (storeOperations, state, stack = [], key) => {
   stack.pop();
 };
 
+/**
+ * An internal function that initializes the store, generates the API, and overloads actions
+ * with the result of the operation. The latter is best understood if you consider two reducers
+ * that both trigger something based on the same action type. In redux-operations, you can say
+ * 1 action has many operations. Operation #2 may need the result of operation #1. By providing that information
+ * in action.meta.operations.results, which is accessable in the resolve function, the developer can write
+ * clean logic basic on previous results without the need for generators or middleware.
+ */
 const liftReducerWith = (reducer, initialCommittedState) => {
   const initialLiftedState = {
     userState: initialCommittedState
@@ -113,25 +181,25 @@ const liftReducerWith = (reducer, initialCommittedState) => {
   return (liftedState = initialLiftedState, liftedAction) => {
     let {api, userState} = liftedState;
     if (liftedAction.type === INIT_REDUX || liftedAction.type === INIT_DEVTOOLS) {
-      const initResult = reducer(undefined, {type: INIT_REDUX_OPERATIONS});
-      api = makeStoreAPI(initResult);
+      const initialResult = reducer(undefined, {type: INIT_REDUX_OPERATIONS});
+      api = makeStoreAPI(initialResult);
     }
     let activeState = reducer(userState, liftedAction);
     const actionObject = api[liftedAction.type] || {};
     const operationArray = actionObject.operationArray;
     if (operationArray) {
       operationArray.forEach(operation => {
-        let locationStack = operation.defaultLocation;
-        // 3 possiblies: If a locationStack isn't given, use the default (for simple non-multi scenarios)
+        let locationInState = operation.defaultLocation;
+        // 3 possiblies: If a locationInState isn't given, use the default (for simple non-multi scenarios)
         // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
         // Otherwise, use default
         if (liftedAction.meta.operations.locationInState && (!liftedAction.meta.operations.operationName || operation.name === liftedAction.meta.operations.operationName)) {
-          locationStack = liftedAction.meta.operations.locationInState
+          locationInState = liftedAction.meta.operations.locationInState
         }
-        const subState = walkState(locationStack, activeState);
+        const subState = walkState(locationInState, activeState);
         const newSubState = operation.resolve(subState, liftedAction);
         if (subState !== newSubState) {
-          activeState = appendChangeToState(locationStack, activeState, newSubState);
+          activeState = appendChangeToState(locationInState, activeState, newSubState);
         }
         liftedAction.meta.operations.results = liftedAction.meta.operations.results || {};
         liftedAction.meta.operations.results[operation.name] = {oldState: subState, state: newSubState};
@@ -144,10 +212,18 @@ const liftReducerWith = (reducer, initialCommittedState) => {
   };
 };
 
+/**
+ * An internal function that overwrites the state with state.userState, so you can see the API in devtools
+ * but you don't have to do anything differently in able to access your state.
+ */
 const unliftState = (liftedState) => {
   return liftedState.userState;
 };
 
+/**
+ * An internal function that hands the dispatch function to every action allowing for pain-free
+ * async actions (thunks, promises) that happen right in the resolve function.
+ */
 const unliftStore = (reduxOperationStore, liftReducer) => {
   return {
     ...reduxOperationStore,
@@ -170,6 +246,12 @@ const unliftStore = (reduxOperationStore, liftReducer) => {
   };
 };
 
+/**
+ * An store enhancer factory that takes no arguments and returns a standard redux storeEnhancer that
+ * works similarly to a very basic redux-devtools. It shows you the API of all your redux-operations reducers
+ *
+ * @returns {Function} redux storeEnhancer
+ */
 export const reduxOperations = () => {
   return createStore => (reducer, initialState, enhancer) => {
     function liftReducer(r) {
