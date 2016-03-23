@@ -65,7 +65,7 @@ export const walkState = (locationInState = [], state, initializer) => {
 /**
  * A custom factory to create a reducer full of operations specifically for redux-operations
  *
- * @param {String} operationName the name that you pass into your combineReducers function
+ * @param {String} operationName the name of the reducer as passed into combineReducers.
  * @param {*} initialState the initial state for components using this reducer, same as what you'd use for redux.
  * @param {Object} reducerObject an object where each property key is a redux actionType.
  *
@@ -81,7 +81,7 @@ export const walkState = (locationInState = [], state, initializer) => {
  * @returns {Function} a redux-operations reducer that plays well with other reducers
  */
 export const operationReducerFactory = (operationName, initialState, reducerObject) => {
-   const reducer = (state = initialState, action = {}) => {
+  const reducer = (state = initialState, action = {}) => {
     if (action.type !== INIT_REDUX_OPERATIONS) return state;
 
     //For each operation, set the initialState as the default value
@@ -101,11 +101,11 @@ export const operationReducerFactory = (operationName, initialState, reducerObje
     });
     return {
       ...reducerObject,
-      signature: REDUX_OPERATION_SIGNATURE
+      signature: REDUX_OPERATION_SIGNATURE,
+      operationName
     }
   };
-  reducer.name = operationName;
-  return reducer;
+  return Object.defineProperty(reducer, 'name', {value: operationName});
 };
 
 /**
