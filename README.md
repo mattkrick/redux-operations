@@ -154,4 +154,4 @@ export default class Counter extends Component {
 
 ## More advanced cases
 For more advanced use cases, see the [Counter example](https://github.com/mattkrick/redux-operations-counter-example)
-or read the [blog post](https://medium.com/@matt.krick/solving-redux-s-shortcoming-in-150-locs-540979ce6cf9#.8ys0jfkpz).
+or read the [blog post](https://medium.com/@matt.krick/introducing-redux-operations-332ab56e468b#.rzl1w93o9).
