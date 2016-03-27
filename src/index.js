@@ -279,6 +279,7 @@ export const reduxOperations = () => {
     if (reduxOperationStore.reduxOperationStore) {
       throw new Error('redux-operations should not be applied more than once. Check your store configuration.');
     }
+    reduxOperationStore.dispatch.toString = () => '<Dispatch Function>'
     return unliftStore(reduxOperationStore, liftReducer);
   };
 };
