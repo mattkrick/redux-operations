@@ -122,7 +122,7 @@ const appendChangeToState = (locationInState, state, newSubState) => {
   if (locationInState.length === 1) {
     return {...state, [nextLocation]: newSubState};
   } else {
-    const subObject = appendChangeToState(locationInState.slice(1), state[nextLocation], newSubState);
+    const subObject = appendChangeToState(locationInState.slice(1), state[nextLocation] || {}, newSubState);
     return {...state, [nextLocation]: subObject}
   }
 };
