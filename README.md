@@ -20,7 +20,7 @@ Everything you'll ever encounter in the wild:
 - Your app here!
 
 ## How's it different from redux-saga?
-risking oversimplification, redux-saga uses generators and puts business logic in the middleware.
+Risking oversimplification, redux-saga uses generators and puts business logic in the middleware.
 It also lets you cancel promises.
 
 redux-operations keeps all logic in the reducer by adding info to `action.meta.operations` behind the scenes.
