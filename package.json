@@ -3,6 +3,7 @@
   "version": "0.5.2",
   "description": "Prioritized waterfall reducers for predictable, dynamic, multi reducers with a visual API",
   "main": "./lib/index.js",
+  "main:src": "./src/index.js",
   "scripts": {
     "clean": "rimraf lib",
     "lint": "xo src/index.js --esnext --space --fix",
