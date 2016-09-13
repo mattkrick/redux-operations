@@ -80,32 +80,36 @@ export const walkState = (locationInState = [], state, initializer) => {
  * @returns {Function} a redux-operations reducer that plays well with other reducers
  */
 export const operationReducerFactory = (operationName, initialState, reducerObject) => {
-  const reducer = (state = initialState, action = {}) => {
-    if (action.type !== INIT_REDUX_OPERATIONS) return state;
+	// Able to define name on creation of reducer
+  const reducerObj = {
+  	[operationName] (state = initialState, action = {}) {
+			if (action.type !== INIT_REDUX_OPERATIONS) return state;
 
-    //For each operation, set the initialState as the default value
-    Object.keys(reducerObject).forEach(operation => {
-      const resolveFunc = reducerObject[operation].resolve;
-      reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action);
-      reducerObject[operation].resolve.toString = () => '<Resolve Function>';
-      const args = reducerObject[operation].arguments;
-      if (typeof args === 'object' && args !== null) {
-        Object.keys(args).forEach(arg => {
-          const curArg = args[arg];
-          if (typeof curArg.type === 'function') {
-            curArg.type.toString = () => `<${curArg.type.name}>`;
-          }
-        })
-      }
-    });
-    return {
-      ...reducerObject,
-      signature: REDUX_OPERATION_SIGNATURE,
-      operationName
-    }
-  };
-  reducer.name = operationName;
-  return Object.freeze(reducer, 'name', {value: operationName});
+			//For each operation, set the initialState as the default value
+			Object.keys(reducerObject).forEach(operation => {
+				const resolveFunc = reducerObject[operation].resolve;
+				reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action);
+				reducerObject[operation].resolve.toString = () => '<Resolve Function>';
+				const args = reducerObject[operation].arguments;
+				if (typeof args === 'object' && args !== null) {
+					Object.keys(args).forEach(arg => {
+						const curArg = args[arg];
+						if (typeof curArg.type === 'function') {
+							curArg.type.toString = () => `<${curArg.type.name}>`;
+						}
+					})
+				}
+			});
+
+			return {
+				...reducerObject,
+				signature: REDUX_OPERATION_SIGNATURE,
+				operationName
+			}
+		}
+	}
+
+  return reducerObj[operationName];
 };
 
 /**
