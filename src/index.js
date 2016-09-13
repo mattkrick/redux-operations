@@ -3,10 +3,10 @@ const INIT_DEVTOOLS = '@@INIT';
 const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
-const bindOperationToActionCreator = (locationInState, operationName, actionCreator) => {
+const bindOperationToActionCreator = (locationInState, lastOperations, actionCreator) => {
   return (...args) => {
     const action = actionCreator(...args);
-    action.meta = {...action.meta, operations: {locationInState, operationName}};
+    action.meta = {...action.meta, operations: {locationInState, operationName: lastOperations.name, dispatch: lastOperations.dispatch}};
     return action;
   }
 };
@@ -22,10 +22,9 @@ const bindOperationToActionCreator = (locationInState, operationName, actionCrea
  *
  * @returns {Function|Object} actionCreators that automatically assign operations metadata to themselves
  */
-export const bindOperationToActionCreators = (locationInState, reducer, actionCreators) => {
-  const operationName = reducer.name;
+export const bindOperationToActionCreators = (locationInState, lastOperations, actionCreators) => {
   if (typeof actionCreators === 'function') {
-    return bindOperationToActionCreator(locationInState, operationName, actionCreators);
+    return bindOperationToActionCreator(locationInState, lastOperations, actionCreators);
   }
 
   if (typeof actionCreators !== 'object' || actionCreators === null) {
@@ -33,7 +32,7 @@ export const bindOperationToActionCreators = (locationInState, reducer, actionCr
   }
 
   return Object.keys(actionCreators).reduce((reduction, actionCreator) => {
-    reduction[actionCreator] = bindOperationToActionCreator(locationInState, operationName, actionCreators[actionCreator]);
+    reduction[actionCreator] = bindOperationToActionCreator(locationInState, lastOperations, actionCreators[actionCreator]);
     return reduction;
   }, {});
 };
