@@ -104,7 +104,8 @@ export const operationReducerFactory = (operationName, initialState, reducerObje
       operationName
     }
   };
-  return Object.defineProperty(reducer, 'name', {value: operationName});
+  reducer.name = operationName;
+  return Object.freeze(reducer, 'name', {value: operationName});
 };
 
 /**
