@@ -3,10 +3,10 @@ const INIT_DEVTOOLS = '@@INIT';
 const INIT_REDUX_OPERATIONS = '@@reduxOperations/INIT';
 const REDUX_OPERATION_SIGNATURE = '@@reduxOperations';
 
-const bindOperationToActionCreator = (locationInState, operationName, actionCreator) => {
+const bindOperationToActionCreator = (locationInState, lastOperations, actionCreator) => {
   return (...args) => {
     const action = actionCreator(...args);
-    action.meta = {...action.meta, operations: {locationInState, operationName}};
+    action.meta = {...action.meta, operations: {locationInState, operationName: lastOperations.operationName, dispatch: lastOperations.dispatch}};
     return action;
   }
 };
@@ -22,10 +22,9 @@ const bindOperationToActionCreator = (locationInState, operationName, actionCrea
  *
  * @returns {Function|Object} actionCreators that automatically assign operations metadata to themselves
  */
-export const bindOperationToActionCreators = (locationInState, reducer, actionCreators) => {
-  const operationName = reducer.name;
+export const bindOperationToActionCreators = (locationInState, lastOperations, actionCreators) => {
   if (typeof actionCreators === 'function') {
-    return bindOperationToActionCreator(locationInState, operationName, actionCreators);
+    return bindOperationToActionCreator(locationInState, lastOperations, actionCreators);
   }
 
   if (typeof actionCreators !== 'object' || actionCreators === null) {
@@ -33,7 +32,7 @@ export const bindOperationToActionCreators = (locationInState, reducer, actionCr
   }
 
   return Object.keys(actionCreators).reduce((reduction, actionCreator) => {
-    reduction[actionCreator] = bindOperationToActionCreator(locationInState, operationName, actionCreators[actionCreator]);
+    reduction[actionCreator] = bindOperationToActionCreator(locationInState, lastOperations, actionCreators[actionCreator]);
     return reduction;
   }, {});
 };
@@ -81,31 +80,40 @@ export const walkState = (locationInState = [], state, initializer) => {
  * @returns {Function} a redux-operations reducer that plays well with other reducers
  */
 export const operationReducerFactory = (operationName, initialState, reducerObject) => {
-  const reducer = (state = initialState, action = {}) => {
-    if (action.type !== INIT_REDUX_OPERATIONS) return state;
+	// Able to define name on creation of reducer
+	function operation(state = initialState, action = {}) {
+		if (action.type !== INIT_REDUX_OPERATIONS) return state;
 
-    //For each operation, set the initialState as the default value
-    Object.keys(reducerObject).forEach(operation => {
-      const resolveFunc = reducerObject[operation].resolve;
-      reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action);
-      reducerObject[operation].resolve.toString = () => '<Resolve Function>';
-      const args = reducerObject[operation].arguments;
-      if (typeof args === 'object' && args !== null) {
-        Object.keys(args).forEach(arg => {
-          const curArg = args[arg];
-          if (typeof curArg.type === 'function') {
-            curArg.type.toString = () => `<${curArg.type.name}>`;
-          }
-        })
-      }
-    });
-    return {
-      ...reducerObject,
-      signature: REDUX_OPERATION_SIGNATURE,
-      operationName
-    }
-  };
-  return Object.defineProperty(reducer, 'name', {value: operationName});
+		//For each operation, set the initialState as the default value
+		Object.keys(reducerObject).forEach(operation => {
+			const resolveFunc = reducerObject[operation].resolve;
+			reducerObject[operation].resolve = (state = initialState, action) => resolveFunc(state, action);
+			reducerObject[operation].resolve.toString = () => '<Resolve Function>';
+			const args = reducerObject[operation].arguments;
+			if (typeof args === 'object' && args !== null) {
+				Object.keys(args).forEach(arg => {
+					const curArg = args[arg];
+					if (typeof curArg.type === 'function') {
+						curArg.type.toString = () => `<${curArg.type.name}>`;
+					}
+				})
+			}
+		});
+
+		return {
+			...reducerObject,
+			signature: REDUX_OPERATION_SIGNATURE,
+			operationName
+		}
+	}
+
+	return Object.defineProperty(operation, 'operationName', {
+		value: operationName,
+		enumerable: false,
+		writable: false,
+		configurable: false,
+	});
+
 };
 
 /**
@@ -167,7 +175,7 @@ const makeStoreOperations = (storeOperations, state, stack = [], key) => {
         storeOperations[operation].operationArray.push({
           ...state[operation],
           defaultLocation: [...stack],
-          name: key
+					operationName: key
         })
       })
     } else {
@@ -207,7 +215,7 @@ const liftReducerWith = (reducer, initialCommittedState) => {
         // 3 possiblies: If a locationInState isn't given, use the default (for simple non-multi scenarios)
         // If Loc but no Name, or name == operation name, use given location (for dynamic or multi scenarios)
         // Otherwise, use default
-        if (liftedAction.meta.operations.locationInState && (!liftedAction.meta.operations.operationName || operation.name === liftedAction.meta.operations.operationName)) {
+        if (liftedAction.meta.operations.locationInState && (!liftedAction.meta.operations.operationName || operation.operationName === liftedAction.meta.operations.operationName)) {
           locationInState = liftedAction.meta.operations.locationInState
         }
         const subState = walkState(locationInState, activeState);
@@ -216,7 +224,7 @@ const liftReducerWith = (reducer, initialCommittedState) => {
           activeState = appendChangeToState(locationInState, activeState, newSubState);
         }
         liftedAction.meta.operations.results = liftedAction.meta.operations.results || {};
-        liftedAction.meta.operations.results[operation.name] = {oldState: subState, state: newSubState};
+        liftedAction.meta.operations.results[operation.operationName] = {oldState: subState, state: newSubState};
       })
     }
     return {
